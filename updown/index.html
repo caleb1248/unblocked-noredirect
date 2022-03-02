@@ -1,0 +1,940 @@
+<!DOCTYPE html>
+<html>
+  <head>
+  	<script>
+  	window.addEventListener('error', e => {
+		alert(e.message + '   at ' + e.filename + ':' + e.lineno + ':' + e.colno);
+	});</script>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width">
+		<link rel="icon" href="https://drive.google.com/favicon.ico">
+    <title>My Drive - Google Drive</title>
+	<style>
+		* {
+			margin: 0;
+		}
+		#canvas {
+			width: 100%;
+			height: 100vh;
+			position: absolute;
+			top: 0;
+			left: 0;
+		}
+
+		#is-dying, #score {
+			position: fixed;
+			z-index: 100;
+			top: 5px;
+			right: 5px;
+			font-size: 25px;
+			user-select: none;
+		}
+
+		#score {
+			left: 5px;
+			font-weight: bold;
+			font-size: 30px;
+		}
+
+		#you-died {
+			position: fixed;
+			top: 50%;
+			left: 50%;
+			transform: translate(-50%, -50%);
+			padding: 10px;
+			text-align: center;
+			backdrop-filter: blur(4px);
+			border-radius: 10px;
+			border: 1px solid black;
+			background: rgba(0, 0, 0, .2);
+			cursor: pointer;
+			font-size: 26px;
+			user-select: none;
+		}
+	</style>
+  </head>
+  <body>
+	<div style="display:none"><!--
+		<img src="ground.png" id="ground">
+		<img src="celing.png" id="ceiling">-->
+		<img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGAAAABgCAYAAADimHc4AAAD5ElEQVR4Xu2dWahNURyHfwghIUmkUChKKfHgyYt5nsdMmYVSUlJK8eKFF0rx4IVSUh4oD7ckpUSZp8zzPM/T/3fPufeec9aZz1p777X3/6uvdO4+7lnfuo679157H8BvRog/xH9pf4nf8vhJfJf2S8bj/DO/luuHjO3pVzR9D9t6S258X/WSkYhHfOodoxCf+NQr4hafegPj/4Q5AN/1grjGp5FnNOIbn0aaMYh3fBpZxiL+8WkkSUp8GjnGITnxaaQYj9TxnNwXGWcjwwQkLz6NBEmNT0MnyfFpqExEsuPT0JgEjU9DYTI0foOBo/GzDZQp4m+YLyLJBsZUaPx8BsI0aPxCOmc6NH4xnTIDGr+UzpgJjV+OTtD45WudWdD4lWiV2dD4lWqNOdD41WiFueIfmH+5WtqamQeNX4s1MR8av1arRuPbsSoWQOPbsmIWQuPbtCIWQePbtmwWQ+O7sCyWQOO7siRLofFdWpRl0PiuLchy8S/MJ6h2zcsKaPygNFgJjR+kWayCxg/aRlZD44dhPWug8cMSa6HxwxSP8zzoi7yvT+5jPsmLEb3G56sp+dp5dZDX8I5XuQPzQd7xhSvFvcfHtyDG55LNWPAa5gCjLONz+U5seAZzkFGV8XkePVY8gjnQKPodqRNaseMuzMFGTcbnkeVYcgPmgKMk703KQzyx5TLMQUdFxl+HmHMB5sCjIO+0uwEJ4BzMwYct429CQjgDM0CYcs98CxJEHcwIYcn425AwTsIMEYafxR1IIMdhxgha3u5+JxLKUZhBgvSjuAsJ5jDMKEHJI7F7kHAOwgwThO/FfVCwH2Yc1/IjTQ6IzaBgL8xALmV8/qtrDqWe3TAjufKteAgaPwv++pcbyoVvxCNiCyhZbIcZy7Y87XkMGj8vW+F2UdkrpHb2WkLJy2a4m4CX4gmxFZSCbISbK3heiKfE1lCKsh7279DClRZ1YhsoJeH5VpsT8FQ8LbaFUha8iNDWXXifiGfFdlDKZiHsTABXiPP0ZnsoFcEbRdU6AVzcdV7sAKViuMi1liXqD8WLYicoVcHPIKh2Au6Ll8TOUKqm2s8buydeE7tAqQl+qnalE8D1pDfFrlBqZjgqm4A7abtBscIwlD8Bt5H66e9R/0zFCkNQ3gTcQup9v2fqaYotBqH0BPD9/oHYO/0cxSIDUHwCeP0Ad7T6NDxBsUtfFN4Tvo7U8Z1+jVsr1umF/BPA3/F5ZLN/45aKE7rDPBx9VXwuDszYTnEE92QzJ+AKUvH5n7MSAB3RdEqS14vxVOLgrC0Up/DMFSeAB9V4En1o9pcV13C5CFdFMD73ir3jP27+YmLLafCgAAAAAElFTkSuQmCC" id="waveup">
+		<img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGAAAABgCAYAAADimHc4AAAAAXNSR0IArs4c6QAABUlJREFUeF7tnderJEUUh78155wDKuaEgiIo+OSLD2ZdddeEOSvogyCCICgsgoiirjlgzjmnP8YHA4qJXV3XwM9b5W33ztyp6u7pqXAKhttwz+lz6vdNdVfo6VpC3uUrYAVwf67VWJJr4i7vvwF9rgceyLEuJQCQ7oJwHfBgbhBKAeAhXAs8lBOEkgB4CNcAK3OBUBoAD+Fq4OEcIJQIwEO4CngkdQilAvAQrgQeTRlCyQCk+1+AIDyWKoTSAXgIlwNPpAihBgAewmXAk6lBqAWAh3Ap8FRKEGoC4CFcAjydCoTaAHgIFwPPpAChRgAewkXAs7OGUCuAZCDUDMBDuBB4blYtoXYAHsIFwPOzgGAA5lTXiPl84IWhIRiAecX/dBBeHBKCAfi/2oJwHvDSUBAMwEKlBWE58PIQEAzAaJUHg2AAxn/NBWEZ8Mo0W4IBWFxdQTgXeHVaEAzAZGUF4Rzgtcmm8RYGIEwzQTgbeD3MPNzKAIRrJQhLgTfCXSZbGoDJGjUtBOEs4M04t/HWBiBeybWuJfQCwQDEA5CHIKglvNXOfd7LALRXUBDOBN5ufwowAF3Um2sJZwDvtD2NAWir3LxfJwgGoDsAf09o1RIMQD8APITTgXdjTmkAYtSabKvL0WnAe5NN5ywMQKhS4XZ/OAjvh7gYgBCV4m2CIRiAeHFDPQThVOCDxRwMQKic7ewE4RTgw3HuBqCdsDFegnAy8NEoJwMQI2V727EQDEB7UWM9R0IwALEydrNf4+4J/12ODEA3Qdt4C4LuCR/bQKyNfP34CMJJwCdqARu6z0aRx/IL9ZFd8+N9m/4bN+L7nJoxNmj83x+vBrbqR5PBz/IvBAHQk8F624jKuL+hYwl/SdPf5vHgtcsk4BqJ9C3wNXB4JkkXlaYAHOdW+b8BDiuqdhlUxl8mjnHLat8Bh2aQdykprm12Q49y89jfA4eUUsPE6/HbuuOAI93E0Q/AwYknX0J6CwCoUroZa6T2E3BQCbVMuA4jAShfffs/BX4BDky4ArmnNhaAKnYA8Bmwyh3nXtkU818UgBLez0H4Hdg/xRpkntOvIZNx+wCfu+chBcRKfwr8GAJA4fYCvnDTFvv2F7/6MwUDkFJ7AF8C6wFqFVa6K7AqtAX4ULs6CJrF3Lt7/OrPMPEmPEqhnd3laDN3aapexQ4CtAKgeDu63tE2wJ4dEqjdNfoS1BRsezdY28HdH2oXs039g7qhi514Wy2rAbsAu7fJoHKfzgCk39ZugVm9pN0qFzS2+r0AUNAt3QSeekbqKVkJU6A3AAq3uXsQVVMWuiRZmaxArwAUTl1T/ThBCzo7TY5fvcXPsQOxEMU2dT/dPMJ1V0N8arWJmoqIEUnP+OiX5EcD6qZaGa3A1AAonKYr9IqXYwGNGawsVGCqABROT7bpjVPHA9sZgQUKrJ7GPWDdKOsDehXkCYAGblYaCgwBQOEEQS/KPhHQ/JEVp8BQABRO6wjaPEGPZhuEGQDwELShjn7WrymM6suQLcCLrZjaZE0vwsv10fLevjizAOCT18abemG25pGqLbMEINHvBbSxzha1Epg1AOl+N6C9HzWZV11JAYBEvwu40U3mVQUhFQAS/Q7g5togpARAEG4DbgU0o1pFSQ2ARL8FuL0WCCkCEISbgDuBTUpvBqkCkO43ACtKh5AyAEHQ/vD3AFrgKbKkDkCiXwHcVyqEHAAIgjbfXOlW2YpqCbkAkOiaN3q8NAg5ARAEbaqjNQWtNxdRcgMg0bWLhVbXioCQIwBB0CuCtdudFv2zLrkCkOha2tRjL1lD+AdjfOVxTjgeSQAAAABJRU5ErkJggg==" id="wavedown">
+		<!--<form id = 'refresh' method="POST"></form>-->
+	</div>
+	<canvas id = "canvas" width="700" height="400">sorry, your browser doesn't support HTML canvas</canvas>
+	<div id = 'is-dying'>Alive</div>
+	<div id="score">0</div>
+	<div id = 'you-died'>You died.<br>Play again?</div><!--
+	<script>
+		(function (global, factory) {
+			typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory() :
+			typeof define === 'function' && define.amd ? define(factory) :
+			(global.Stats = factory());
+		}(this, (function () { 'use strict';
+
+		/**
+		* @author mrdoob / http://mrdoob.com/
+		*/
+
+		var Stats = function () {
+
+			var mode = 0;
+
+			var container = document.createElement( 'div' );
+			container.style.cssText = 'position:fixed;top:0;left:0;cursor:pointer;opacity:0.9;z-index:10000';
+			container.addEventListener( 'click', function ( event ) {
+
+				event.preventDefault();
+				showPanel( ++ mode % container.children.length );
+
+			}, false );
+
+			
+
+			function addPanel( panel ) {
+
+				container.appendChild( panel.dom );
+				return panel;
+
+			}
+
+			function showPanel( id ) {
+
+				for ( var i = 0; i < container.children.length; i ++ ) {
+
+					container.children[ i ].style.display = i === id ? 'block' : 'none';
+
+				}
+
+				mode = id;
+
+			}
+
+			var beginTime = ( performance || Date ).now(), prevTime = beginTime, frames = 0;
+
+			var fpsPanel = addPanel( new Stats.Panel( 'FPS', '#0ff', '#002' ) );
+			var msPanel = addPanel( new Stats.Panel( 'MS', '#0f0', '#020' ) );
+
+			if ( self.performance && self.performance.memory ) {
+
+				var memPanel = addPanel( new Stats.Panel( 'MB', '#f08', '#201' ) );
+
+			}
+
+			showPanel( 0 );
+
+			return {
+
+				REVISION: 16,
+
+				dom: container,
+
+				addPanel: addPanel,
+				showPanel: showPanel,
+
+				begin: function () {
+
+					beginTime = ( performance || Date ).now();
+
+				},
+
+				end: function () {
+
+					frames ++;
+
+					var time = ( performance || Date ).now();
+
+					msPanel.update( time - beginTime, 200 );
+
+					if ( time >= prevTime + 1000 ) {
+
+						fpsPanel.update( ( frames * 1000 ) / ( time - prevTime ), 100 );
+
+						prevTime = time;
+						frames = 0;
+
+						if ( memPanel ) {
+
+							var memory = performance.memory;
+							memPanel.update( memory.usedJSHeapSize / 1048576, memory.jsHeapSizeLimit / 1048576 );
+
+						}
+
+					}
+
+					return time;
+
+				},
+
+				update: function () {
+
+					beginTime = this.end();
+
+				},
+
+
+				domElement: container,
+				setMode: showPanel
+
+			};
+
+		};
+
+		Stats.Panel = function ( name, fg, bg ) {
+
+			var min = Infinity, max = 0, round = Math.round;
+			var PR = round( window.devicePixelRatio || 1 );
+
+			var WIDTH = 80 * PR, HEIGHT = 48 * PR,
+					TEXT_X = 3 * PR, TEXT_Y = 2 * PR,
+					GRAPH_X = 3 * PR, GRAPH_Y = 15 * PR,
+					GRAPH_WIDTH = 74 * PR, GRAPH_HEIGHT = 30 * PR;
+
+			var canvas = document.createElement( 'canvas' );
+			canvas.width = WIDTH;
+			canvas.height = HEIGHT;
+			canvas.style.cssText = 'width:80px;height:48px';
+
+			var context = canvas.getContext( '2d' );
+			context.font = 'bold ' + ( 9 * PR ) + 'px Helvetica,Arial,sans-serif';
+			context.textBaseline = 'top';
+
+			context.fillStyle = bg;
+			context.fillRect( 0, 0, WIDTH, HEIGHT );
+
+			context.fillStyle = fg;
+			context.fillText( name, TEXT_X, TEXT_Y );
+			context.fillRect( GRAPH_X, GRAPH_Y, GRAPH_WIDTH, GRAPH_HEIGHT );
+
+			context.fillStyle = bg;
+			context.globalAlpha = 0.9;
+			context.fillRect( GRAPH_X, GRAPH_Y, GRAPH_WIDTH, GRAPH_HEIGHT );
+
+			return {
+
+				dom: canvas,
+
+				update: function ( value, maxValue ) {
+
+					min = Math.min( min, value );
+					max = Math.max( max, value );
+
+					context.fillStyle = bg;
+					context.globalAlpha = 1;
+					context.fillRect( 0, 0, WIDTH, GRAPH_Y );
+					context.fillStyle = fg;
+					context.fillText( round( value ) + ' ' + name + ' (' + round( min ) + '-' + round( max ) + ')', TEXT_X, TEXT_Y );
+
+					context.drawImage( canvas, GRAPH_X + PR, GRAPH_Y, GRAPH_WIDTH - PR, GRAPH_HEIGHT, GRAPH_X, GRAPH_Y, GRAPH_WIDTH - PR, GRAPH_HEIGHT );
+
+					context.fillRect( GRAPH_X + GRAPH_WIDTH - PR, GRAPH_Y, PR, GRAPH_HEIGHT );
+
+					context.fillStyle = bg;
+					context.globalAlpha = 0.9;
+					context.fillRect( GRAPH_X + GRAPH_WIDTH - PR, GRAPH_Y, PR, round( ( 1 - ( value / maxValue ) ) * GRAPH_HEIGHT ) );
+
+				}
+
+			};
+
+		};
+
+		return Stats;
+
+		})));
+	</script>-->
+	
+	<script src = 'https://cdn.jsdelivr.net/npm/stats-js@1.0.1/build/stats.min.js'></script>
+    <script>
+		const waveUp = document.getElementById('waveup');
+		const waveDown = document.getElementById('wavedown');
+		const aliveEl = document.getElementById('is-dying');
+		const refreshForm = document.getElementById('refresh');
+		const youDied = document.getElementById('you-died');
+		youDied.onclick = () => window.navigator.onLine ? /*location.reload()*/ window.game.init() : window.game.init();
+		window.addEventListener('keydown', (e) => {
+			if (e.key === ' ' && window.game && aliveEl.innerHTML === 'dead' && !e.repeat) {
+				/*window.game.init();
+				window.game.player.up = true;*/
+			}
+		});
+		const empty = function () { };
+		const emptyStep = { step: empty };
+
+		(function (bind) {
+			Object.defineProperties(Function.prototype, {
+				'bind': {
+					value: function (context) {
+						var newf = bind.apply(this, arguments);
+						newf.context = context;
+
+						return newf;
+					}
+				},
+				'isBound': {
+					value: function () {
+						return this.hasOwnProperty('context');
+					}
+				}
+			});
+		}(Function.prototype.bind));
+
+		//window.addEventListener('keydown', (e) => { e.key == 'r' && !location.href.includes('smart09codes.repl.co') ? window.location.href = '/404' : false });
+
+		class GameObject {
+			constructor() {
+				this.x = 0;
+				this.y = 0;
+				this.w = null;
+				this.h = null;
+				this.color = 'white';
+			}
+
+			draw(ctx) {
+				ctx.fillStyle = this.color;
+				ctx.fillRect(this.x, this.y, this.w, this.h);
+			}
+
+			getBoundingBox() {
+				return { x: this.x, y: this.y, w: this.w, h: this.h };
+			}
+		}
+		class Game {
+			constructor() {
+				console.log('creatingGame');
+				this.init();
+			}
+
+			init() {
+				this.lastRenderTime = performance.now();
+				this.timeStep = Game.spf;
+				document.getElementById('score').innerHTML = 0;
+				this.canvas = document.getElementById('canvas');
+				this.ctx = this.canvas.getContext('2d');
+				this.w = 0;
+				this.h = 0;
+				this.frameCount = 0;
+				this.speed = 20;
+				this.difficulty = .9;
+				this.player = new Player(this.ctx, this.speed);
+				this.boss = new Enemy(this.ctx);
+				this.boss.hide();
+				this.background = new Background(this.ctx);
+
+				this.pathMode = true;
+
+				this.pathHandler = new PathHandler(this.ctx, this.path());
+
+				this.resize();
+				window.addEventListener('resize', this.resize.bind(this));
+				this.render();
+				youDied.style.display = 'none';
+			}
+
+
+			path() {
+				const speed = this.speed, difficulty = this.difficulty;
+				return {
+					speed: speed,
+					segments: [],
+					curTop: 0,
+					gap: 5 * speed * 2 * difficulty,
+					width: 5 * speed * 2 * difficulty,
+					timeBetween: 15,
+					color: 'orange',
+					spawnX: window.innerWidth + 5,
+				}
+			}
+
+			set width(value) {
+				this.w = value;
+				this.canvas.width = value;
+			}
+
+			set height(value) {
+				this.h = value;
+				this.canvas.height = value;
+			}
+
+			get width() {
+				return this.w;
+			}
+
+			get height() {
+				return this.h;
+			}
+
+			resize() {
+				this.height = window.innerHeight;
+				this.width = window.innerWidth;
+			}
+			
+			static mpf = 1 / 60;
+
+			getMultplier (time) {
+				let secondsElapsed = (time - this.lastRenderTime) / 1000;
+				return Math.floor(secondsElapsed / Game.spf);
+			}
+
+			render(time, doNotRepeat) {
+				this.frameCount += 1;
+				let shouldContinue = typeof doNotRepeat === 'undefined' ? true : false;
+
+				let multiplier = this.getMultplier(time);
+
+				this.ctx.fillStyle = 'white';
+				this.ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+				this.background.update();
+
+				if (this.pathHandler.update(this.player, this.pathMode)) {
+					aliveEl.innerHTML = 'dead';
+					shouldContinue = false;
+					youDied.focus();
+					
+					youDied.style.display = 'block';
+					window.game.init();
+
+					return;
+				} else if (this.detectCollision(this.player.getBoundingBox(), this.boss.getBoundingBox())) {
+					aliveEl.innerHTML = 'dead';
+					shouldContinue = false;
+					youDied.focus();
+
+					youDied.style.display = 'block';
+					window.game.init();
+
+					return;
+				}
+				else {
+					aliveEl.innerHTML = 'alive';
+				}
+
+				this.boss.update();
+
+				this.player.update();
+
+				const seconds = 3;
+				if (this.frameCount % (60 * seconds) === 0) {
+					this.pathMode = this.pathMode ? false : true;
+					if (!this.pathMode) {
+						this.boss.attack(60 * seconds);
+					}
+				}
+
+				/*stats.update();*/
+				if (shouldContinue) requestAnimationFrame(this.render.bind(this));
+			}
+
+			detectCollision(r1, r2) {
+				return r2.x < r1.x + r1.w && r1.x < r2.x + r2.w && r2.y < r1.y + r1.h && r1.y < r2.y + r2.h
+			}
+
+			static distanceFrom = function distanceFrom(p1, p2) {
+				return Math.sqrt((p1.x - p2.x) ** 2 + (p1.y - p2.y) ** 2);
+			}
+		}
+
+		class Player extends GameObject {
+			constructor(ctx, speed) {
+				super();
+				this.speed = speed;
+				this.u = false;
+				this.image = waveDown;
+				this.up = false;
+				this.w = 8;
+				this.h = 8;
+				this.createEventListeners();
+				this.ctx = ctx;
+				this.vSpeed = speed;
+				this.x = window.innerWidth / 2 - this.w;
+				this.trails = [];
+			}
+
+			set up(value) {
+				this.u = Boolean(value);
+				this.image = Boolean(value) ? waveUp : waveDown;
+			}
+
+			get up() {
+				return this.u;
+			}
+
+			keyUp(e) {
+				if (e.key == ' ') {
+					this.up = false;
+					e.preventDefault();
+				}
+			}
+
+			keyDown(e) {
+				if (e.key == ' ') {
+					this.up = true;
+					e.preventDefault();
+				}
+			}
+
+			createEventListeners() {
+				window.addEventListener('keydown', this.keyDown.bind(this));
+				window.addEventListener('keyup', this.keyUp.bind(this));
+				window.addEventListener('mousedown', function (e) { this.up = true }.bind(this));
+				window.addEventListener("mouseup", function (e) { this.up = false }.bind(this));
+				window.addEventListener('touchstart', function (e) { this.up = true }.bind(this));
+				window.addEventListener("touchend", function (e) { this.up = false }.bind(this));
+			}
+
+			move() {
+				!this.up ? this.y += this.vSpeed : this.y -= this.vSpeed;
+
+				/*
+				// telport on under floor
+				if (this.y < 0) {
+					this.y = this.y + window.innerHeight;
+					this.trails.push({ x: this.x + this.w / 2, y: this.y + this.h / 2, split: true });
+				} else if (this.y + this.h > window.innerHeight) {
+					this.y = this.y + this.h - window.innerHeight;
+					this.trails.push({ x: this.x + this.w / 2, y: this.y + this.h / 2, split: true });
+				}*/
+
+				if (this.y < 0) {
+					this.y = 0;
+				} else if (this.y + this.h > window.innerHeight) {
+					this.y = window.innerHeight - this.h;
+				}
+			}
+
+			draw() {
+				this.ctx.drawImage(this.image, this.x, this.y, this.w, this.h);/*
+				this.ctx.fillStyle = 'black';
+				this.ctx.fillRect(this.x, this.y, this.w, this.h);*/
+			}
+
+			static Trail = class Trail extends GameObject {
+				constructor(size, x, y, type) {
+					super();
+					this.size = size;
+					this.x = x;
+					this.y = y;
+					this.type = type;
+				}
+
+				draw(ctx) {
+					ctx.drawImage(this.type, this.x, this.y, this.size, this.size);/*
+					ctx.fillStyle = 'orange';
+					ctx.fillRect(this.x, this.y, this.size, this.size);*/
+				}
+			}
+
+			update() {
+				this.move();
+
+				this.draw();/*
+				this.trails.push(new Player.Trail(this.vSpeed + this.vSpeed / 7.9, this.x, this.y, this.trailImage));
+				this.trails.forEach(function (trail) {
+					trail.x -= trail.size;
+					trail.draw(this.ctx);
+					if (trail.x < -100) {
+						this.trails.splice(this.trails.indexOf(trail), 1);
+					}
+				}.bind(this));*/
+
+				this.ctx.fillStyle = 'black';
+				this.trails.push({ x: this.x + this.w / 2, y: this.y + this.h / 2 });
+				this.ctx.beginPath();
+				for (let place of this.trails) {
+					place.x -= this.speed;
+					if (place.x < -100) {
+						this.trails.splice(this.trails.indexOf(place), 1);
+						continue;
+					}
+					if (place.split) {
+						this.ctx.stroke();
+						this.ctx.beginPath();
+						this.ctx.moveTo(place.x, place.y);
+					} else {
+						this.ctx.lineTo(place.x, place.y);
+					}
+				}
+				this.ctx.strokeWidth = 10
+				this.ctx.stroke();
+			}
+		}
+
+		class FrameCounter {
+			/**
+			* @param {function} func - function to run.
+			*/
+			constructor(func, framesAhead, thisArg = window) {
+				this.thisArg = thisArg;
+				this.func = func;
+				this.frameCount = 0;
+				this.total = Math.round(framesAhead);
+			}
+
+			step() {
+				this.frameCount += 1;
+				if (this.frameCount >= this.total) {
+					if (this.func.isBound) {
+						this.func();
+					} else {
+						this.func.apply(this.thisArg);
+					}
+					return true;
+				}
+				return false;
+			}
+		}
+		class Enemy extends GameObject {
+			constructor(ctx) {
+				super();
+				const distanceFromRight = 100;
+				this.distanceFromRight = distanceFromRight;
+				this.w = window.innerHeight / 10;
+				this.h = this.w;
+				this.y = window.innerHeight / 2 - this.w / 2;
+				this.x = window.innerWidth - distanceFromRight - this.w;
+				this.ctx = ctx;
+				this.color = 'red';
+				this.laser = new Enemy.Laser(distanceFromRight + this.w / 2);
+				this.laser.off();
+				this.movements = [];
+				this.frameCounters = [];
+				this.curAttack = emptyStep;
+			}
+
+			update() {
+				for (let i = this.movements.length - 1; i >= 0; i--) {
+					if (this.movements[i].step()) {
+						this.movements.splice(i, 1);
+					}
+				}
+				for (let i = this.frameCounters.length - 1; i >= 0; i--) {
+					if (this.frameCounters[i].step()) {
+						this.frameCounters.splice(i, 1);
+					}
+				}
+				this.curAttack.step();
+				this.laser.w = window.innerWidth;
+				this.laser.y = this.y + this.h / 2 - this.laser.h / 2;
+				this.laser.draw(this.ctx);
+				this.draw(this.ctx);
+			}
+
+			hide() {
+				this.movements.push(new Enemy.Change(this, 'move', .25 * 60, { x: this.x - (window.innerWidth - this.distanceFromRight - this.w / 2), y: this.y - (-this.h - 200) }));
+			}
+
+			show() {
+				this.movements.push(new Enemy.Change(this, 'move', .25 * 60, { x: /*this.x - (window.innerWidth - this.distanceFromRight - this.w / 2)*/ 0, y: /* this.y - (window.innerHeight / 2 - this.h / 2 ) */ -(this.y - (window.innerHeight / 2 - this.h)) }));
+			}
+
+			move(x, y) {
+				this.x += x; this.y += y;
+			}
+
+			attack(frames) {
+				this.onFrame(()=>{
+				this.show();
+				let numOfAttacks = 3;
+				frames -= .25 * 60;
+				let timePerAttack = frames / numOfAttacks;
+				this.onFrame(function () {
+					this.curAttack = new Enemy.Attack(timePerAttack, this);
+				}.bind(this), .25 * 60);
+
+				for (let i = 1; i <= numOfAttacks; i++) {
+					if (i >= numOfAttacks) {
+						this.onFrame(function () {
+							this.curAttack = emptyStep;
+							this.hide();
+						}.bind(this), i * timePerAttack + .25 * 60);
+					}
+					else {
+						this.onFrame(function () {
+							this.curAttack = new Enemy.Attack(timePerAttack, this);
+						}.bind(this), i * timePerAttack + .25 * 60);
+					}
+				}
+				}, 25)
+			}
+
+			onFrame(func, framesAhead) {
+				this.frameCounters.push(new FrameCounter(func, framesAhead));
+			}
+			/**
+			* @class Attack - a boss attack
+			*/
+			static Attack = class Attack {
+				/**
+				* @param {number} time - the length of the attack
+				* @param {Enemy} boss - the boss that is attacking
+				*/
+				constructor(time, boss) {
+					this.time = time;
+					this.type = Enemy.Attack.attackTypes[Math.floor(Math.random() * Enemy.Attack.attackTypes.length)];
+					this.boss = boss;
+					this.done = false;
+					this.curChange = emptyStep;
+
+					if (this.type === 'rush') {
+						this.rush();
+					} else if (this.type === 'laser move') {
+						this.laserMove();
+					} else if (this.type === 'laser swing') {
+						this.laserSwing();
+					}
+				}
+
+				rush() {
+					this.rushBack = true;
+					this.changeY = Math.random() * (window.innerHeight - this.boss.h) - this.boss.y
+					this.curChange = new Enemy.Change(this.boss, 'move', this.time / 2, { x: -window.innerWidth, y: this.changeY });
+				}
+
+				laserMove() {
+
+				}
+
+				laserSwing() {
+
+				}
+
+				step() {
+					if (this.curChange.step()) {
+						if (this.type == 'rush') {
+							if (this.rushBack) {
+								this.curChange = false;
+								this.curChange = new Enemy.Change(this.boss, 'move', this.time / 2, { x: window.innerWidth, y: -this.changeY });
+							}
+						}
+						
+					}
+				}
+
+
+				static attackTypes = [/*'laser move', 'laser swing', */'rush'];
+			}
+
+			static Laser = class Laser extends GameObject {
+				constructor(distance) {
+					super();
+					this.color = 'yellow';
+					this.w = window.innerWidth;
+					this.h = 35;
+					this.x = -distance;
+					this.originalDraw = this.draw;
+					this.empty = () => { };
+					this.enabled = true;
+				}
+
+				on() {
+					this.draw = this.originalDraw;
+					this.enabled = true;
+				} off() {
+					this.draw = this.empty;
+					this.enabled = false;
+				}
+				detectCollision(point) {
+					return false;
+				}
+			}
+
+		}
+
+		Enemy.Change = class Change {
+			constructor(boss, type, time, data = { x: 0, y: 0 }, timing = 'linear') {
+				this.frameCount = 0;
+				this.boss = boss;
+				this.type = type;
+				this.time = time;
+				this.data = data;
+				this.timing = timing;
+				this.createSteps();
+			}
+
+			createSteps() {
+				this.steps = [];
+				if (this.type == 'move') {
+					if (this.timing == 'linear') {
+						let dx = this.data.x, dy = this.data.y;
+						let distanceXPerStep = dx / this.time, distanceYPerStep = dy / this.time;
+						for (let i = 0; i < this.time; i++) {
+							this.steps.push({ x: distanceXPerStep, y: distanceYPerStep });
+						}
+					}
+				}
+			}
+
+			step() {
+				this.frameCount += 1;
+				if (this.frameCount >= this.steps.length) {
+					return true;
+				}
+				this.applyChange(this.frameCount);
+				return false;
+			}
+
+			applyChange(index) {
+				if (this.type == 'move') {
+					this.boss.move(this.steps[index].x, this.steps[index].y);
+				}
+			}
+		}
+
+
+		class Background {
+			constructor() {
+			}
+			move() {
+
+			}
+			update() {
+
+			}
+		}
+
+		class PathSegment {
+			constructor(f, t, gap, width, color, x) {
+				this.from = f;
+				this.to = t;
+				this.gap = gap;
+				this.width = width;
+				this.color = color;
+				this.x = x;
+				this.y = f;
+
+				this.pointsArrayTop = [{ x: x, y: 0 }, { x: x + width, y: 0 }, { x: x + width, y: t }, { x: x, y: f }];
+				this.lineSegmentTop = { x: x, y: t };
+				this.pointsArrayBottom = [{ x: x, y: window.innerHeight }, { x: x + width, y: window.innerHeight }, { x: x + width, y: t + gap }, { x: x, y: f + gap }];
+				this.lineSegmentBottom = [{ x: x, y: t + gap }];
+			}
+
+			update(ctx, speed, player) {
+				try {
+					this.x -= speed;
+					ctx.fillStyle = 'orange';
+
+					ctx.beginPath();
+					ctx.moveTo(this.x, 0);
+					ctx.lineTo(this.x + this.width, 0);
+					ctx.lineTo(this.x + this.width, this.to);
+					ctx.lineTo(this.x, this.from);
+					ctx.lineTo(this.x, 0);
+					ctx.fill();
+
+					ctx.beginPath();
+					ctx.moveTo(this.x, window.innerHeight);
+					ctx.lineTo(this.x + this.width, window.innerHeight);
+					ctx.lineTo(this.x + this.width, this.to + this.gap);
+					ctx.lineTo(this.x, this.from + this.gap);
+					ctx.lineTo(this.x, window.innerHeight);
+					ctx.fill();
+
+
+					if (this.pointInside({ x: player.x + player.w / 2, y: player.y + player.h / 2 })) return true;
+					return false;
+
+				} catch (e) {
+					console.error(e);
+				}
+			}
+
+			pointInside(point) {
+				try {
+					if (point.x < this.x || point.x > this.x + this.width) return false;
+					const leastY = Math.min(this.from, this.to);
+					const mostY = Math.max(this.from + this.gap, this.to + this.gap);
+					if ((point.y > 0 && point.y < leastY) || (point.y < window.innerHeight && point.y > mostY)) {
+						return true;
+					}
+					let x = this.x, y = this.y, width = this.width, t = this.to, f = this.from, gap = this.gap;
+
+					let rightAnglePoint = this.from > this.to ? { x: x, y: leastY } : { x: x + width, y: leastY };
+					if (this.pointInTriangle(point, rightAnglePoint, { x: x, y: f }, { x: x + width, y: t })) return true;
+
+
+					rightAnglePoint = this.from < this.to ? { x: x, y: mostY } : { x: x + width, y: mostY };
+					if (this.pointInTriangle(point, rightAnglePoint, { x: x, y: f + gap }, { x: x + width, y: t + gap })) return true;
+					return false;
+				} catch (e) {
+					console.error(e);
+				}
+			}
+			/**
+			* @function pointInTriangle - returns if a point is in a triangle. from http://jsfiddle.net/PerroAZUL/zdaY8/1/
+			* @param p {number} - point
+			* @param p0 {number} - point of triangle
+			* @param p1 {number} - point of triangle
+			* @param p2 {number} - point of triangle
+			*/
+			pointInTriangle(p, p0, p1, p2) {
+				var A = 1 / 2 * (-p1.y * p2.x + p0.y * (-p1.x + p2.x) + p0.x * (p1.y - p2.y) + p1.x * p2.y);
+				var sign = A < 0 ? -1 : 1;
+				var s = (p0.y * p2.x - p0.x * p2.y + (p2.y - p0.y) * p.x + (p0.x - p2.x) * p.y) * sign;
+				var t = (p0.x * p1.y - p0.y * p1.x + (p0.y - p1.y) * p.x + (p1.x - p0.x) * p.y) * sign;
+
+				return s > 0 && t > 0 && (s + t) < 2 * A * sign;
+			}
+		}
+
+		class PathHandler {
+			constructor(ctx, path) {
+				this.frameCount = 0;
+
+				this.path = path;
+				this.ctx = ctx;
+				this.length = 60 * 10;
+				this.makepath = true;
+			}
+
+			update(player, yes) {
+				try {
+					if (this.frameCount % (this.path.width / this.path.speed) === 0 && this.makepath) {
+						document.getElementById('score').innerHTML = parseInt(document.getElementById('score').innerHTML) + 1;
+						if (yes) {
+							let dy = this.path.curTop - this.path.gap < 0 ? this.path.gap : this.path.curTop + this.path.gap > window.innerHeight * .9 ? -this.path.gap : Math.random() < .5 ? -this.path.gap : this.path.gap;
+							this.path.segments.push(new PathSegment(this.path.curTop, this.path.curTop + dy, this.path.gap, this.path.width, this.path.color, this.path.spawnX));
+							this.path.curTop += dy;
+						}
+					}
+					this.ctx.fillStyle = 'black';
+					let dead = false;
+					for (let i = 0; i < this.path.segments.length; i++) {
+						const path = this.path.segments[i];
+						if (path.x + path.width < -1000) {
+							this.path.segments.splice(i, 1);
+						}
+						if (path.update(this.ctx, this.path.speed, player)) {
+							dead = true;
+						}
+
+
+					}
+
+					this.frameCount += 1;
+
+
+					/*if (this.frameCount % this.length === 0) {
+						this.makepath = !this.makepath;
+					}*/
+
+					return dead;
+				} catch (e) {
+					console.log(e);
+				}
+			}
+		}
+
+
+		/*window.stats = new Stats();
+		document.body.appendChild(stats.dom);
+		stats.dom.style.cssText = `
+			position: fixed;
+			bottom: 0;
+			left: 0;
+			z-index: 100;
+		`;*/
+		window.game = new Game();
+	</script>
+  </body>
+</html>

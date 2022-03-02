@@ -7,6 +7,10 @@ console.log('starting up')
 
 app.use(express.static(path.join(__dirname, '/site')));
 app.use((req, res, next) => {
+	if (req.baseUrl === '/views') {
+		next();
+		return;
+	}
 	const data = parseInt(fs.readFileSync(path.join(__dirname, '/views.txt')));
 	fs.writeFileSync(path.join(__dirname, '/views.txt'), (data + 1).toString());
 	next()

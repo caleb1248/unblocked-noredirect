@@ -1,0 +1,1 @@
+setTimeout(() => document.querySelector('iframe').contentWindow.focus(), 100);

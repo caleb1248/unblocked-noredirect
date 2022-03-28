@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width">
+    <title>flippity badge tracker graph</title>
+    <link href="style.css" rel="stylesheet" type="text/css" />
+  </head>
+  <body>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/eruda/2.4.1/eruda.min.js" integrity="sha512-RrQDQUon0OiQVjKQYkMuhtLgx8R/4niagIVdHltxcAJa1+cc8FJFFOhtLuK3YJAoo5mdfAFh98ZQwbDKJgFIpg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.1/chart.min.js" integrity="sha512-QSkVNOCYLtj73J4hbmVoOV6KVZuMluZlioC+trLpewV8qMjsWqlIQvkn1KGX2StWvPMdWGBqim1xlC8krl1EKQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+		<script>eruda.init()</script>
+    <form id = "form">
+			<input placeholder="Your name as shown on flippity" id="name"/>
+			<!-- <input placeholder="Your flippity password" id="password"/> -->
+			<input type="submit" value = "calculate my points"/>
+		</form><span>zoom out to view accurate data (around 50%)</span>
+
+		<div id="points">
+		</div>
+		<iframe id="iframe" src="./blank.html" width = '1' height = '1' style='outline: none, border: none, opacity: 0;' sandbox="allow-downloads allow-forms allow-modals allow-orientation-lock allow-pointer-lock allow-popups allow-popups-to-escape-sandbox allow-presentation allow-same-origin allow-scripts allow-top-navigation allow-top-navigation-by-user-activation"></iframe>
+    <script defer src="./script.js"></script>
+		<div id="canvas">
+		</div>
+  </body>
+</html>

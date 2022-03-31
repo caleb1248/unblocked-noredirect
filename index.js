@@ -2,12 +2,14 @@ const path = require('path');
 const fs = require('fs');
 const express = require('express');
 const helmet = require('helmet');
+const cors = require('cors');
 const app = express();
 const server = app.listen(process.env.PORT || 3000, () => console.log('listening on port ' + (process.env.PORT || 3000).toString()));
 console.log('starting up')
 
 app.use(express.json()) // for parsing application/json
 app.use(express.urlencoded({ extended: true })) // for parsing application/x-www-form-urlencoded
+app.use(cors()); // cause why not
 
 app.use(express.static(path.join(__dirname, '/site')));
 app.use((req, res, next) => {

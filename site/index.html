@@ -128,7 +128,7 @@ error</pre
 
       const container = document.querySelector("#container");
 
-      fetch("https://www.lexma.cf/games.json")
+      fetch("./games.json")
         .then(r => r.json())
         .then(r => {
           r.forEach(({ name, link, desc, img }) =>
